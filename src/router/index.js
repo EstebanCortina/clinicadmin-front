@@ -1,27 +1,42 @@
+import Router from 'vue-router';
+import store from '@/store';
+import Login from '@/views/login-view.vue';
+import Citas from '@/views/appointments-view.vue';
+import Pacientes from '@/views/patients-view.vue';
+import Tratamientos from '@/views/treatments-view.vue';
+import MainLayout from '@/layouts/main-layout.vue';
 import Vue from 'vue';
-import VueRouter from 'vue-router';
-import HomeView from '../views/home-view.vue';
 
-Vue.use(VueRouter);
+Vue.use(Router);
 
-const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView,
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue'),
-  },
-];
+const router = new Router({
+  mode: 'history',
+  routes: [
+    { path: '/', redirect: '/citas' },
+    { path: '/login', component: Login },
+    {
+      path: '/',
+      component: MainLayout,
+      children: [
+        { path: '/citas', component: Citas },
+        { path: '/pacientes', component: Pacientes },
+        { path: '/tratamientos', component: Tratamientos },
+      ],
+    },
+  ],
+});
 
-const router = new VueRouter({
-  routes,
+router.beforeEach((to, from, next) => {
+  // eslint-disable-next-line
+  const isAuthenticated = store.getters.isAuthenticated;
+
+  if (to.path !== '/login' && !isAuthenticated) {
+    next('/login');
+  } else if (to.path === '/login' && isAuthenticated) {
+    next('/citas');
+  } else {
+    next();
+  }
 });
 
 export default router;
