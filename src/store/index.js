@@ -5,7 +5,7 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
-    user: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
   },
   mutations: {
     setUser(state, user) {
@@ -20,12 +20,14 @@ export default new Vuex.Store({
       // Simulación de login
       if (email === 'admin@clinica.com' && password === '123456') {
         const user = { email };
+        localStorage.setItem('user', JSON.stringify(user));
         commit('setUser', user);
         return true;
       }
       return false;
     },
     logout({ commit }) {
+      localStorage.removeItem('user');
       commit('logout');
     },
   },

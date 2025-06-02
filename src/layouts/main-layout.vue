@@ -22,6 +22,8 @@
 
     <v-app-bar app color="primary" dark>
       <v-toolbar-title>Clínica Médica</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn text @click="logout">Salir</v-btn>
     </v-app-bar>
 
     <v-main>
@@ -31,3 +33,15 @@
     </v-main>
   </v-app>
 </template>
+
+<script>
+export default {
+  methods: {
+    logout() {
+      this.$store.dispatch('logout');
+      this.$router.push('/login');
+    },
+  },
+};
+
+</script>
