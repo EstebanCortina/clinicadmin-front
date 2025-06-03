@@ -25,6 +25,7 @@ export default new Vuex.Store({
         commit('setToken', response.data.token);
         return true;
       } catch (error) {
+        console.error('Login failed:', error);
         return false;
       }
     },
