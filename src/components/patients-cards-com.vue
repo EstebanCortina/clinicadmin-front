@@ -83,6 +83,23 @@
             v-model="selectedPatient.comments"
           ></v-text-field>
         </v-card-text>
+        <v-file-input
+          v-if="selectedPatient.id"
+          label="Subir archivo"
+          accept=".pdf,.png,.jpg,.jpeg"
+          @change="uploadFile"
+          prepend-icon="mdi-paperclip"
+          dense
+          hide-details
+          class="mt-2"
+        ></v-file-input>
+        <v-btn
+          small
+          color="primary"
+          @click.stop="downloadFile(selectedPatient.id)"
+          v-if="hasFile">
+          Descargar archivo
+        </v-btn>
         <v-alert
           v-if="errorMessage"
           type="error"
@@ -113,6 +130,9 @@ export default {
       editDialog: false,
       errorMessage: '',
       selectedPatient: {},
+      hasFile: false,
+      fileUrl: null,
+
     };
   },
   methods: {
@@ -128,6 +148,7 @@ export default {
       this.selectedPatient = { ...patient };
       this.editDialog = true;
       this.errorMessage = '';
+      this.checkExistingFile();
     },
     openCreateModal() {
       this.selectedPatient = {}; // limpiar para crear nuevo paciente
@@ -152,6 +173,56 @@ export default {
     },
     showError(message) {
       this.errorMessage = message;
+    },
+    async checkExistingFile() {
+      if (!this.selectedPatient.id) return;
+      try {
+        const res = await api.get(`/patients/${this.selectedPatient.id}/files/main`);
+        if (res) {
+          this.hasFile = true;
+        } else {
+          this.hasFile = false;
+        }
+      } catch (err) {
+        this.hasFile = false;
+      }
+    },
+    async uploadFile(file) {
+      if (!file || !this.selectedPatient.id) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        await api.post(`/patients/${this.selectedPatient.id}/files`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        this.$nextTick(() => this.checkExistingFile());
+      } catch (err) {
+        this.showError('Error al subir archivo.');
+      }
+    },
+    async downloadFile(patientId) {
+      try {
+        const res = await api.get(`/patients/${patientId}/files/main`, {
+          responseType: 'arraybuffer',
+        });
+        const blob = new Blob([res], { type: 'application/pdf' }); // ajusta el MIME si no es PDF
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `archivo_paciente_${patientId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Error al descargar el archivo');
+        this.showError('No se pudo descargar el archivo del paciente.');
+      }
     },
   },
   created() {
