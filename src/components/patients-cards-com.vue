@@ -16,9 +16,30 @@
       </v-col>
     </v-row>
 
+    <v-tooltip left>
+      <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            fab
+            color="primary"
+            dark
+            fixed
+            bottom
+            right
+            large
+            @click="openCreateModal"
+            v-bind="attrs"
+            v-on="on"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+      </template>
+      <span>Agregar paciente</span>
+    </v-tooltip>
     <v-dialog v-model="editDialog" max-width="500px">
       <v-card>
-        <v-card-title>Editar Paciente</v-card-title>
+        <v-card-title>
+          {{ selectedPatient.id ? 'Editar Paciente' : 'Agregar Paciente' }}
+        </v-card-title>
         <v-card-text>
           <v-text-field
             label="Nombre"
@@ -57,7 +78,7 @@
             label="Sexo"
             v-model="selectedPatient.sex"
           ></v-text-field>
-            <v-text-field
+          <v-text-field
             label="Comentarios"
             v-model="selectedPatient.comments"
           ></v-text-field>
@@ -82,7 +103,6 @@
 </template>
 
 <script>
-// eslint-disable-next-line
 import api from '@/services/api';
 
 export default {
@@ -105,17 +125,28 @@ export default {
       }
     },
     openEditModal(patient) {
-      this.selectedPatient = { ...patient }; // copiar para evitar modificar directo
+      this.selectedPatient = { ...patient };
+      this.editDialog = true;
+      this.errorMessage = '';
+    },
+    openCreateModal() {
+      this.selectedPatient = {}; // limpiar para crear nuevo paciente
       this.editDialog = true;
       this.errorMessage = '';
     },
     async savePatient() {
       try {
-        await api.put(`/patients/${this.selectedPatient.id}`, this.selectedPatient);
+        if (this.selectedPatient.id) {
+          // Actualizar paciente
+          await api.put(`/patients/${this.selectedPatient.id}`, this.selectedPatient);
+        } else {
+          // Crear paciente
+          await api.post('/patients', this.selectedPatient);
+        }
         this.editDialog = false;
         this.fetchPatients();
       } catch (err) {
-        const msg = err.response?.data?.data || err.message || 'Error al actualizar paciente.';
+        const msg = err.response?.data?.data || err.response?.data?.message || err.message || 'Error al guardar paciente.';
         this.showError(msg);
       }
     },
